@@ -1,0 +1,7 @@
+# https://git-scm.com/docs/gitignore
+
+# Info about running containers
+.docker-*
+
+# Helm chart packages
+.helm-charts
