@@ -1,0 +1,33 @@
+{{- include "common.statefulset" (list . .Values "example.statefulset") -}}
+
+{{- /* Deplyment overrides*/ -}}
+{{- define "example.statefulset" -}}
+spec:
+  template:
+    spec:
+      containers:
+      - {{- include "common.container" (list . .Values "example.container") | nindent 8 }}
+      volumes:
+      - name: nginx-html
+        configMap:
+          name: {{ include "common.fullname" . }}-html
+{{- end -}}
+
+{{- /* Container overrides */ -}}
+{{- define "example.container" -}}
+ports:
+- name: http
+  containerPort: 80
+  protocol: TCP
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+volumeMounts:
+- mountPath: /usr/share/nginx/html
+  name: nginx-html
+{{- end -}}

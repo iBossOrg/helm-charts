@@ -1,0 +1,14 @@
+{{- $annotations := dict "helm.sh/hook" "test-success" -}}
+{{- $testpod := dict "name" "test-connection" "annotations" $annotations -}}
+{{- include "common.pod" (list . $testpod "examples.test.pod.tpl") -}}
+
+{{- define "examples.test.pod.tpl" -}}
+{{- $port  := (first (.Values.service.ports)).port -}}
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['{{ include "common.fullname" . }}:{{ $port }}']
+  restartPolicy: Never
+{{- end -}}

@@ -1,0 +1,77 @@
+{{/*
+Pod template.
+This template takes an array of values:
+- the top context
+- the pod values
+- optional template name of the overrides
+
+# Example values.yaml
+pod:
+  name: mypod   # Optional. Will be prefixed with .Chart.Name
+  labels: {}
+  selectors: {}
+  annotations: {}
+  checksums: []       # File names relative to templates folder.
+  imagePullSecrets: {}
+  podSecurityContext: {}
+  nodeSelector: {}
+  affinity: {}
+  tollerations: []
+*/}}
+{{- define "common.pod" -}}
+{{- $args     := compact  . -}}
+{{- $top      := first    $args -}}
+{{- $args     := rest     $args -}}
+{{- if typeIs "string" (last $args) -}}
+{{- template "common.util.merge" (append . "common.pod.tpl") -}}
+{{- else -}}
+{{- template "common.pod.tpl" . -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "common.pod.tpl" -}}
+{{- $args     := compact  . -}}
+{{- $top      := first    $args -}}
+apiVersion: v1
+kind: Pod
+metadata:
+  {{- include "common.metadata" . | nindent 2 }}
+spec:
+  {{- include "common.pod.spec" . | nindent 2 }}
+{{- end -}}
+
+{{- define "common.pod.spec" -}}
+{{- $args     := compact  . -}}
+{{- $top      := first    $args -}}
+{{- $args     := rest     $args | default (list $top.Values) -}}
+{{- $podspec  := dict -}}
+{{- range $values := $args -}}
+{{- $podspec   = $podspec | merge $values -}}
+{{- end -}}
+{{- with $podspec.imagePullSecrets }}
+imagePullSecrets:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+serviceAccountName: {{ include "common.serviceAccountName" $top | quote }}
+containers:
+- {{- include "common.container" . | nindent 2 }}
+{{- with $podspec.terminationGracePeriodSeconds }}
+terminationGracePeriodSeconds: {{ . }}
+{{- end }}
+{{- with $podspec.podSecurityContext }}
+securityContext:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- with $podspec.nodeSelector }}
+nodeSelector:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- with $podspec.affinity }}
+affinity:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- with $podspec.tolerations }}
+tolerations:
+{{- toYaml . | nindent 0 }}
+{{- end }}
+{{- end -}}

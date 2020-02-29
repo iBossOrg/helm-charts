@@ -1,0 +1,68 @@
+{{/*
+DaemonSet template.
+This template takes an array of values:
+- the top context
+- the daemon set values
+- optional template name of the overrides
+
+# Example values.yaml
+daemonset:
+  name: mydaemonset   # Optional. Will be prefixed with .Chart.Name
+  labels: {}
+  selectors: {}
+  annotations: {}
+  checksums: []       # File names relative to templates folder.
+  replicaCount: 1     # Ignored if horizontalPodAutoscaler is defined
+  revisionHistoryLimit: 10
+  updateStrategy: {}
+  imagePullSecrets: {}
+  podSecurityContext: {}
+  nodeSelector: {}
+  affinity: {}
+  tollerations: []
+*/}}
+{{- define "common.daemonset" -}}
+{{- $args     := compact  . -}}
+{{- $top      := first    $args -}}
+{{- $args     := rest     $args -}}
+{{- if typeIs "string" (last $args) -}}
+{{- template "common.util.merge" (append . "common.daemonset.tpl") -}}
+{{- else -}}
+{{- template "common.daemonset.tpl" . -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "common.daemonset.tpl" -}}
+{{- $args     := compact  . -}}
+{{- $top      := first    $args -}}
+{{- $args     := rest     $args | default (list $top.Values) -}}
+{{- $daemonset := dict -}}
+{{- range $values := $args -}}
+{{- $daemonset = $daemonset | merge $values -}}
+{{- end -}}
+{{- $hpa := $daemonset.horizontalPodAutoscaler | default (dict) -}}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  {{- include "common.metadata" . | nindent 2 }}
+spec:
+  {{- if not $hpa.enabled }}
+  replicas: {{ $daemonset.replicaCount | default 1 }}
+  {{- end }}
+  {{- with $daemonset.revisionHistoryLimit }}
+  revisionHistoryLimit: {{ . }}
+  {{- end }}
+  {{- with $daemonset.updateStrategy }}
+  updateStrategy:
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "common.metadata.selectors" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "common.metadata.selectors" . | nindent 8 }}
+    spec:
+      {{- include "common.pod.spec" . | nindent 6 }}
+{{- end -}}

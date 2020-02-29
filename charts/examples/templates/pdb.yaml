@@ -1,0 +1,1 @@
+{{- include "common.podDisruptionBudget" (list . .Values.podDisruptionBudget) -}}

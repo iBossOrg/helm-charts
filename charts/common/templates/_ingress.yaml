@@ -1,0 +1,98 @@
+ingress:
+{{/*
+Ingress template.
+This template takes an array of values:
+- the top context
+- the ingress values
+- the default service values
+- optional template name of the overrides
+
+# Example values.yaml
+ingress:
+  enabled: true
+  name: ingress
+  hosts: []    # If hosts are missing, single service ingress is used
+  # - host: example.com
+  # - paths:
+  #   - /foo
+  # - host: example.com
+  #   paths:
+  #   - /foo
+  #   service:  # Override default service values
+  #     name: myservice1
+  #     port: http
+
+  tls: []
+service:
+  type: ClusterIP
+  name: service
+  ports:
+  - port: 1234
+    targetPort: 1234
+    protocol: tcp
+    name: http
+*/}}
+{{- define "common.ingress" -}}
+{{- $args     := compact  . -}}
+{{- $top      := first    $args -}}
+{{- $args     := rest     $args -}}
+{{- if typeIs "string" (last $args) -}}
+{{- template "common.util.merge" (append . "common.ingress.tpl") -}}
+{{- else -}}
+{{- template "common.ingress.tpl" . -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "common.ingress.tpl" -}}
+{{- $args     := compact  . -}}
+{{- $top      := first    $args -}}
+{{- $args     := rest     $args -}}
+{{- $service  := last     $args | default (dict) -}}
+{{- $args     := initial  $args -}}
+{{- $ingress  := dict -}}
+{{- range $values := $args -}}
+{{- $ingress   = $ingress | merge $values -}}
+{{- end -}}
+{{- $fullName := include "common.fullname" $top -}}
+{{- if $ingress.enabled -}}
+{{- if semverCompare ">=1.14-0" $top.Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1beta1
+{{- else }}
+apiVersion: extensions/v1beta1
+{{- end }}
+kind: Ingress
+metadata:
+  {{- include "common.metadata" . | nindent 2 }}
+spec:
+  {{- with $ingress.hosts }}
+  rules:
+  {{- range $rule := $ingress.hosts }}
+  {{- $service := $rule.service | default $service }}
+  {{- $port := $service.ports | default (list) }}
+  {{- $port := first $port | default (dict) }}
+  {{- $port := $port.name | default $port.port | default $service.port | default 80 }}
+  {{- with $rule.host }}
+  - host: {{ . | quote }}
+    http:
+  {{- else }}
+  - http:
+  {{- end }}
+      paths:
+      {{- range $path := $rule.paths | default (list "/") }}
+      - path: {{ $path | quote }}
+        backend:
+          serviceName: {{ list $fullName $service.name | compact | join "-" | quote }}
+          servicePort: {{ $port }}
+      {{- end }}
+  {{- end }}
+  {{- else }}
+  backend:
+    serviceName: {{ list $fullName $service.name | compact | join "-" | quote }}
+    servicePort: {{ $service.port | default 80 }}
+  {{- end }}
+  {{- if $ingress.tls }}
+  tls:
+  {{- toYaml $ingress.tls | nindent 2 }}
+  {{- end }}
+{{- end }}
+{{- end -}}

@@ -1,0 +1,119 @@
+# Default values for example.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+###
+### Global metadata.
+###
+# global:
+#   labels: {}
+#   selectors: {}
+#   annotations: {}
+
+###
+### Simple chart with one deployment.
+###
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# labels: {}
+# selectors: {}
+# annotations: {}
+checksums:
+- configmap.yaml
+  # Add checksum/configmap.yaml: sha256sum to annotations
+
+replicaCount: 1
+  # Ignored if horizontalPodAutoscaler is defined
+
+image:
+  repository: nginx
+  # If tag is not set, defaults to .Chart.AppVersion
+  tag: latest
+  pullPolicy: IfNotPresent
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+nodeSelector: {}
+
+affinity: {}
+
+tolerations: []
+
+configmaps:
+- name: html
+  data:
+    index.html: |-
+      <h1>The Helm Chart Common Library Examples</h1>
+      Hello world!
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+  # Automatically mount Service Account token.
+  automountServiceAccountToken: true
+
+service:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+
+ingress:
+  enabled: true
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths: []
+  tls: []
+    #  - secretName: chart-example-tls
+    #    hosts:
+    #      - chart-example.local
+
+horizontalPodAutoscaler:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 3
+  # maxUnavailable: 2
