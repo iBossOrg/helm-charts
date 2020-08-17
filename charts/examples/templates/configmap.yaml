@@ -1,1 +1,2 @@
+{{- /* Config Maps */ -}}
 {{- include "common.configmaps" (list . .Values.configmaps) -}}

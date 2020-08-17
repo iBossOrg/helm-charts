@@ -1,1 +1,2 @@
+{{- /* Ingress */ -}}
 {{- include "common.ingress" (list . .Values.ingress .Values.service) -}}

@@ -1,1 +1,2 @@
+{{- /* Horizontal Pod Autoscaler */ -}}
 {{- include "common.horizontalPodAutoscaler" (list . .Values.horizontalPodAutoscaler) -}}

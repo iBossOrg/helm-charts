@@ -1,3 +1,4 @@
+{{- /* Deployment */ -}}
 {{- include "common.deployment" (list . .Values "example.deployment") -}}
 
 {{- /* Deplyment overrides*/ -}}
@@ -6,7 +7,7 @@ spec:
   template:
     spec:
       containers:
-      - {{- include "common.container" (list . .Values "example.container") | nindent 8 }}
+      - {{- include "common.container" (list . .Values "example.deployment.container") | nindent 8 }}
       volumes:
       - name: nginx-html
         configMap:
@@ -14,7 +15,7 @@ spec:
 {{- end -}}
 
 {{- /* Container overrides */ -}}
-{{- define "example.container" -}}
+{{- define "example.deployment.container" -}}
 ports:
 - name: http
   containerPort: 80

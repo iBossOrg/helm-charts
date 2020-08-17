@@ -1,12 +1,13 @@
+{{- /* Daemon Set */ -}}
 {{- include "common.daemonset" (list . .Values "example.daemonset") -}}
 
-{{- /* Deplyment overrides*/ -}}
+{{- /* Daemon Set overrides*/ -}}
 {{- define "example.daemonset" -}}
 spec:
   template:
     spec:
       containers:
-      - {{- include "common.container" (list . .Values "example.container") | nindent 8 }}
+      - {{- include "common.container" (list . .Values "example.daemonset.container") | nindent 8 }}
       volumes:
       - name: nginx-html
         configMap:
@@ -14,7 +15,7 @@ spec:
 {{- end -}}
 
 {{- /* Container overrides */ -}}
-{{- define "example.container" -}}
+{{- define "example.daemonset.container" -}}
 ports:
 - name: http
   containerPort: 80
